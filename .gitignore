@@ -1,3 +1,5 @@
+*.idea
+*.iml
 *.js
 !jest.config.js
 *.d.ts
