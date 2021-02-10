@@ -4,4 +4,4 @@ import { InfrastructureStack } from "../lib/infrastructure-stack";
 import { App } from "monocdk";
 
 const app = new App();
-new InfrastructureStack(app, "InfrastructureStack");
+new InfrastructureStack(app, "MiraHqInfrastructure");
