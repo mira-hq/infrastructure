@@ -1,5 +1,5 @@
 import { Construct, Duration, Stack, StackProps } from "monocdk";
-import { BlockPublicAccess, Bucket, BucketPolicy } from "monocdk/aws-s3";
+import { BlockPublicAccess, Bucket} from "monocdk/aws-s3";
 import { Effect, ManagedPolicy, PolicyStatement, User } from "monocdk/aws-iam";
 import {
   CacheCookieBehavior,
@@ -94,7 +94,7 @@ export class InfrastructureStack extends Stack {
         "s3:GetObject"
       ],
       resources: [
-        bucket.bucketArn
+        bucket.bucketArn + "/*"
       ]
     }))
 
