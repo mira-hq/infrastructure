@@ -106,6 +106,9 @@ export class InfrastructureStack extends Stack {
 
     const certificate = new Certificate(this, "Certificate", {
       domainName,
+      subjectAlternativeNames: [
+        "*." + domainName
+      ],
       validation: CertificateValidation.fromDns(hostedZone)
     })
 
