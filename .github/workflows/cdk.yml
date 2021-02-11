@@ -22,7 +22,7 @@ jobs:
       - run: npm run build --if-present
       - run: npm test
       - name: CDK Synth
-        if: ${{ matrix.node-version == "15.x" && github.event.action == 'push' }}
+        if: ${{ matrix.node-version == '15.x' && github.event.action == 'push' }}
         uses: scottbrenner/aws-cdk-action@master
         with:
           args: synth
