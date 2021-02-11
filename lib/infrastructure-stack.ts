@@ -142,8 +142,11 @@ export class InfrastructureStack extends Stack {
 
         new PolicyStatement({
           effect: Effect.ALLOW,
-          resources: [bucket.bucketArn + "/*"],
-          actions: ["s3:*", "s3:ListBucket"]
+          resources: [
+            bucket.bucketArn,
+            bucket.bucketArn + "/*"
+          ],
+          actions: ["s3:*"]
         })
       ]
     });
