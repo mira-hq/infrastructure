@@ -1,6 +1,16 @@
 {
   "name": "infrastructure",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mira-hq/infrastructure.git"
+  },
+  "author": "Jerred Shepherd",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/mira-hq/infrastructure/issues"
+  },
+  "homepage": "https://github.com/mira-hq/infrastructure#readme",
   "bin": {
     "infrastructure": "bin/infrastructure.js"
   },
@@ -8,7 +18,15 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "true",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "lint+build": "npm run lint; npm run build",
+    "lint:fix+build": "npm run lint:fix; npm run build",
+    "lint": "npm run eslint; npm run prettier",
+    "lint:fix": "npm run eslint:fix; npm run prettier:fix",
+    "eslint": "eslint \"*/**/*.{js,ts,tsx}\" --color",
+    "eslint:fix": "eslint \"*/**/*.{js,ts,tsx}\" --fix --color",
+    "prettier": "prettier --check .",
+    "prettier:fix": "prettier --write ."
   },
   "devDependencies": {
     "@aws-cdk/assert": "1.88.0",
