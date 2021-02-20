@@ -20,6 +20,9 @@ import {
 import { S3Origin } from "monocdk/aws-cloudfront-origins";
 import { CloudFrontTarget } from "monocdk/aws-route53-targets";
 import { RetentionDays } from "monocdk/lib/aws-logs";
+import { HttpApi, HttpMethod, PayloadFormatVersion } from "monocdk/lib/aws-apigatewayv2";
+import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations";
+import { DomainName } from "monocdk/lib/aws-apigateway";
 
 export class InfrastructureStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -154,6 +157,29 @@ export class InfrastructureStack extends Stack {
       memorySize: 128
     });
 
+    const apiDomainName = new DomainName(this, "DomainName", {
+      certificate: certificate,
+      domainName: "api.mira-hq.com"
+    });
+
+    const httpApi = new HttpApi(this, "HttpApi", {
+      corsPreflight:  {
+        allowCredentials: false,
+        allowHeaders: [],
+        allowMethods: [
+          HttpMethod.GET,
+          HttpMethod.POST
+        ],
+        exposeHeaders: [],
+        maxAge: Duration.minutes(5)
+      },
+      createDefaultStage: true,
+      defaultIntegration: new LambdaProxyIntegration({
+        handler: lambdaFunction,
+        payloadFormatVersion: PayloadFormatVersion.VERSION_2_0
+      })
+    });
+
     const s3Policy = new ManagedPolicy(this, "S3DeploymentPolicy", {
       statements: [
         new PolicyStatement({
@@ -193,6 +219,5 @@ export class InfrastructureStack extends Stack {
       userName: "S3DeploymentUser",
       managedPolicies: [s3Policy]
     });
-
   }
 }
