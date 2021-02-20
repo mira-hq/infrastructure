@@ -12,17 +12,16 @@ import {
   ViewerProtocolPolicy
 } from "monocdk/aws-cloudfront";
 import {Function, Runtime, Code, Tracing }from "monocdk/aws-lambda";
-import { ARecord, HostedZone, RecordTarget } from "monocdk/aws-route53";
+import { ARecord, HostedZone, RecordTarget, RecordSet, RecordType } from "monocdk/aws-route53";
 import {
   Certificate,
   CertificateValidation
 } from "monocdk/aws-certificatemanager";
 import { S3Origin } from "monocdk/aws-cloudfront-origins";
-import { CloudFrontTarget } from "monocdk/aws-route53-targets";
+import { CloudFrontTarget, ApiGatewayv2Domain } from "monocdk/aws-route53-targets";
 import { RetentionDays } from "monocdk/lib/aws-logs";
-import { HttpApi, HttpMethod, PayloadFormatVersion } from "monocdk/lib/aws-apigatewayv2";
+import { HttpApi, HttpMethod, PayloadFormatVersion, DomainName } from "monocdk/lib/aws-apigatewayv2";
 import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations";
-import { DomainName } from "monocdk/lib/aws-apigateway";
 
 export class InfrastructureStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -150,19 +149,19 @@ export class InfrastructureStack extends Stack {
     const lambdaFunction = new Function(this, "LambdaFunction", {
       functionName: "MiraHqBackend",
       runtime: Runtime.NODEJS_14_X,
-      handler: "index.handler",
-      code: Code.fromBucket(codeBucket, "artifact.zip"),
+      handler: "dist/index.graphqlHandler",
+      code: Code.fromBucket(codeBucket, "lambda.zip"),
       tracing: Tracing.ACTIVE,
       logRetention: RetentionDays.ONE_MONTH,
       memorySize: 128
     });
 
-    const apiDomainName = new DomainName(this, "DomainName", {
+    const apiDomainName = new DomainName(this, "ApiDomainName", {
       certificate: certificate,
       domainName: "api.mira-hq.com"
     });
 
-    const httpApi = new HttpApi(this, "HttpApi", {
+    new HttpApi(this, "HttpApi", {
       corsPreflight:  {
         allowCredentials: false,
         allowHeaders: [],
@@ -176,9 +175,20 @@ export class InfrastructureStack extends Stack {
       createDefaultStage: true,
       defaultIntegration: new LambdaProxyIntegration({
         handler: lambdaFunction,
-        payloadFormatVersion: PayloadFormatVersion.VERSION_2_0
-      })
+        payloadFormatVersion: PayloadFormatVersion.VERSION_1_0
+      }),
+      defaultDomainMapping: {
+        domainName: apiDomainName,
+        mappingKey: "/graphql"
+      }
     });
+
+    new RecordSet(this, "LambdaRecordSet", {
+      zone: hostedZone,
+      recordName: "api",
+      recordType: RecordType.AAAA,
+      target: RecordTarget.fromAlias(new ApiGatewayv2Domain(apiDomainName))
+    })
 
     const s3Policy = new ManagedPolicy(this, "S3DeploymentPolicy", {
       statements: [
