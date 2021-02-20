@@ -150,7 +150,6 @@ export class InfrastructureStack extends Stack {
       handler: "index.handler",
       code: Code.fromBucket(codeBucket, "artifact.zip"),
       tracing: Tracing.ACTIVE,
-      profiling: true,
       logRetention: RetentionDays.ONE_MONTH,
       memorySize: 128
     });
