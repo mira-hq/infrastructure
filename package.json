@@ -1,5 +1,5 @@
 {
-  "name": "infrastructure",
+  "name": "@mira-hq/infrastructure",
   "version": "1.0.0",
   "repository": {
     "type": "git",
