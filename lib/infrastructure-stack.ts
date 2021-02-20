@@ -11,6 +11,7 @@ import {
   OriginAccessIdentity,
   ViewerProtocolPolicy
 } from "monocdk/aws-cloudfront";
+import {Function, Runtime, Code, Tracing }from "monocdk/aws-lambda";
 import { ARecord, HostedZone, RecordTarget } from "monocdk/aws-route53";
 import {
   Certificate,
@@ -18,6 +19,7 @@ import {
 } from "monocdk/aws-certificatemanager";
 import { S3Origin } from "monocdk/aws-cloudfront-origins";
 import { CloudFrontTarget } from "monocdk/aws-route53-targets";
+import { RetentionDays } from "monocdk/lib/aws-logs";
 
 export class InfrastructureStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -137,16 +139,53 @@ export class InfrastructureStack extends Stack {
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution))
     });
 
+    const codeBucket = new Bucket(this, "CodeBucket", {
+      versioned: true,
+      blockPublicAccess
+    });
+
+    const lambdaFunction = new Function(this, "LambdaFunction", {
+      functionName: "MiraHqBackend",
+      runtime: Runtime.NODEJS_14_X,
+      handler: "index.handler",
+      code: Code.fromBucket(codeBucket, "artifact.zip"),
+      tracing: Tracing.ACTIVE,
+      profiling: true,
+      logRetention: RetentionDays.ONE_MONTH,
+      memorySize: 128
+    });
+
     const s3Policy = new ManagedPolicy(this, "S3DeploymentPolicy", {
       statements: [
-
         new PolicyStatement({
           effect: Effect.ALLOW,
           resources: [
             bucket.bucketArn,
-            bucket.bucketArn + "/*"
+            bucket.bucketArn + "/*",
+            codeBucket.bucketArn,
+            codeBucket.bucketArn + "/*"
           ],
           actions: ["s3:*"]
+        }),
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: [
+            lambdaFunction.functionArn
+          ],
+          actions: [
+            "lambda:UpdateFunctionCode",
+            "lambda:CreateFunction",
+            "lambda:UpdateFunctionConfiguration"
+          ]
+        }),
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: [
+            "*"
+          ],
+          actions: [
+            "iam:ListRoles"
+          ]
         })
       ]
     });
@@ -155,5 +194,6 @@ export class InfrastructureStack extends Stack {
       userName: "S3DeploymentUser",
       managedPolicies: [s3Policy]
     });
+
   }
 }
