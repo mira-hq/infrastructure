@@ -146,6 +146,8 @@ export class InfrastructureStack extends Stack {
       blockPublicAccess
     });
 
+    const apiSubdomain = "api";
+
     const lambdaFunction = new Function(this, "LambdaFunction", {
       functionName: "MiraHqBackend",
       runtime: Runtime.NODEJS_14_X,
@@ -158,7 +160,7 @@ export class InfrastructureStack extends Stack {
 
     const apiDomainName = new DomainName(this, "ApiDomainName", {
       certificate: certificate,
-      domainName: "api.mira-hq.com"
+      domainName: `${apiSubdomain}.${domainName}`
     });
 
     new HttpApi(this, "HttpApi", {
@@ -169,24 +171,26 @@ export class InfrastructureStack extends Stack {
           HttpMethod.GET,
           HttpMethod.POST
         ],
+        allowOrigins: [
+          `https://${domainName}`
+        ],
         exposeHeaders: [],
         maxAge: Duration.minutes(5)
       },
       createDefaultStage: true,
       defaultIntegration: new LambdaProxyIntegration({
         handler: lambdaFunction,
-        payloadFormatVersion: PayloadFormatVersion.VERSION_1_0
+        payloadFormatVersion: PayloadFormatVersion.VERSION_1_0,
       }),
       defaultDomainMapping: {
-        domainName: apiDomainName,
-        mappingKey: "/graphql"
+        domainName: apiDomainName
       }
     });
 
     new RecordSet(this, "LambdaRecordSet", {
       zone: hostedZone,
-      recordName: "api",
-      recordType: RecordType.AAAA,
+      recordName: apiSubdomain,
+      recordType: RecordType.A,
       target: RecordTarget.fromAlias(new ApiGatewayv2Domain(apiDomainName))
     })
 
