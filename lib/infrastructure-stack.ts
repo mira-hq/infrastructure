@@ -165,8 +165,8 @@ export class InfrastructureStack extends Stack {
 
     new HttpApi(this, "HttpApi", {
       corsPreflight:  {
-        allowCredentials: false,
-        allowHeaders: [],
+        allowCredentials: true,
+        allowHeaders: ["*"],
         allowMethods: [
           HttpMethod.GET,
           HttpMethod.POST
