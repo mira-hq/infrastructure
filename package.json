@@ -35,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^4.15.0",
     "@typescript-eslint/parser": "^4.15.0",
     "aws-cdk": "1.88.0",
+    "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
     "eslint-plugin-cdk": "^0.7.21",
     "husky": "^5.0.9",
