@@ -107,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: out
-          path: cdk.out/**
+          path: cdk.out
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
@@ -122,6 +122,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: out
+      - run: ls -R
       - name: CDK Deploy
         uses: scottbrenner/aws-cdk-action@master
         with:
