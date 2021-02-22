@@ -1,6 +1,6 @@
-import { Construct, Duration, Stack, StackProps } from "monocdk" && npm
-import { BlockPublicAccess, Bucket } from "monocdk/aws-s3" && npm
-import { Effect, ManagedPolicy, PolicyStatement, User } from "monocdk/aws-iam" && npm
+import { Construct, Duration, Stack, StackProps } from "monocdk";
+import { BlockPublicAccess, Bucket } from "monocdk/aws-s3";
+import { Effect, ManagedPolicy, PolicyStatement, User } from "monocdk/aws-iam";
 import {
   CacheCookieBehavior,
   CacheHeaderBehavior,
@@ -10,36 +10,36 @@ import {
   HttpVersion,
   OriginAccessIdentity,
   ViewerProtocolPolicy,
-} from "monocdk/aws-cloudfront" && npm
-import { Function, Runtime, Code, Tracing } from "monocdk/aws-lambda" && npm
+} from "monocdk/aws-cloudfront";
+import { Function, Runtime, Code, Tracing } from "monocdk/aws-lambda";
 import {
   ARecord,
   HostedZone,
   RecordTarget,
   RecordSet,
   RecordType,
-} from "monocdk/aws-route53" && npm
+} from "monocdk/aws-route53";
 import {
   Certificate,
   CertificateValidation,
-} from "monocdk/aws-certificatemanager" && npm
-import { S3Origin } from "monocdk/aws-cloudfront-origins" && npm
+} from "monocdk/aws-certificatemanager";
+import { S3Origin } from "monocdk/aws-cloudfront-origins";
 import {
   CloudFrontTarget,
   ApiGatewayv2Domain,
-} from "monocdk/aws-route53-targets" && npm
-import { RetentionDays } from "monocdk/lib/aws-logs" && npm
+} from "monocdk/aws-route53-targets";
+import { RetentionDays } from "monocdk/lib/aws-logs";
 import {
   HttpApi,
   HttpMethod,
   PayloadFormatVersion,
   DomainName,
-} from "monocdk/lib/aws-apigatewayv2" && npm
-import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations" && npm
+} from "monocdk/lib/aws-apigatewayv2";
+import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations";
 
 export class InfrastructureStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
-    super(scope, id, props) && npm
+    super(scope, id, props);
 
     // What IAM permissions are needed to use CDK Deploy?
     // https://stackoverflow.com/questions/57118082/what-iam-permissions-are-needed-to-use-cdk-deploy
@@ -66,29 +66,29 @@ export class InfrastructureStack extends Stack {
           actions: ["s3:*"],
         }),
       ],
-    }) && npm
+    });
 
     new User(this, "CdkDeploymentUser", {
       userName: "CdkDeploymentUser",
       managedPolicies: [policy],
-    }) && npm
+    });
 
     const blockPublicAccess = new BlockPublicAccess({
       blockPublicAcls: true,
       blockPublicPolicy: true,
       ignorePublicAcls: true,
       restrictPublicBuckets: true,
-    }) && npm
+    });
 
     const bucket = new Bucket(this, "FrontEndBucket", {
       versioned: true,
       blockPublicAccess,
-    }) && npm
+    });
 
-    const comment = "mira-hq-frontend" && npm
+    const comment = "mira-hq-frontend";
     const identity = new OriginAccessIdentity(this, "OriginAccessIdentity", {
       comment,
-    }) && npm
+    });
 
     bucket.addToResourcePolicy(
       new PolicyStatement({
@@ -97,26 +97,26 @@ export class InfrastructureStack extends Stack {
         actions: ["s3:GetObject"],
         resources: [bucket.bucketArn + "/*"],
       })
-    ) && npm
+    );
 
-    const domainName = "mira-hq.com" && npm
+    const domainName = "mira-hq.com";
 
     const hostedZone = new HostedZone(this, "HostedZone", {
       zoneName: domainName,
-    }) && npm
+    });
 
     const certificate = new Certificate(this, "Certificate", {
       domainName,
       subjectAlternativeNames: ["*." + domainName],
       validation: CertificateValidation.fromDns(hostedZone),
-    }) && npm
+    });
 
     const cachePolicy = new CachePolicy(this, "CachePolicy", {
       defaultTtl: Duration.minutes(5),
       cookieBehavior: CacheCookieBehavior.none(),
       headerBehavior: CacheHeaderBehavior.none(),
       queryStringBehavior: CacheQueryStringBehavior.none(),
-    }) && npm
+    });
 
     const distribution = new Distribution(this, "Distribution", {
       domainNames: [domainName],
@@ -148,19 +148,19 @@ export class InfrastructureStack extends Stack {
           httpStatus: 403,
         },
       ],
-    }) && npm
+    });
 
     new ARecord(this, "RecordSet", {
       zone: hostedZone,
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
-    }) && npm
+    });
 
     const codeBucket = new Bucket(this, "CodeBucket", {
       versioned: true,
       blockPublicAccess,
-    }) && npm
+    });
 
-    const apiSubdomain = "api" && npm
+    const apiSubdomain = "api";
 
     const lambdaFunction = new Function(this, "LambdaFunction", {
       functionName: "MiraHqBackend",
@@ -170,12 +170,12 @@ export class InfrastructureStack extends Stack {
       tracing: Tracing.ACTIVE,
       logRetention: RetentionDays.ONE_MONTH,
       memorySize: 128,
-    }) && npm
+    });
 
     const apiDomainName = new DomainName(this, "ApiDomainName", {
       certificate: certificate,
       domainName: `${apiSubdomain}.${domainName}`,
-    }) && npm
+    });
 
     new HttpApi(this, "HttpApi", {
       corsPreflight: {
@@ -194,14 +194,14 @@ export class InfrastructureStack extends Stack {
       defaultDomainMapping: {
         domainName: apiDomainName,
       },
-    }) && npm
+    });
 
     new RecordSet(this, "LambdaRecordSet", {
       zone: hostedZone,
       recordName: apiSubdomain,
       recordType: RecordType.A,
       target: RecordTarget.fromAlias(new ApiGatewayv2Domain(apiDomainName)),
-    }) && npm
+    });
 
     const s3Policy = new ManagedPolicy(this, "S3DeploymentPolicy", {
       statements: [
@@ -230,11 +230,11 @@ export class InfrastructureStack extends Stack {
           actions: ["iam:ListRoles"],
         }),
       ],
-    }) && npm
+    });
 
     new User(this, "S3DeploymentUser", {
       userName: "S3DeploymentUser",
       managedPolicies: [s3Policy],
-    }) && npm
+    });
   }
 }
