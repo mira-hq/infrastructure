@@ -9,18 +9,32 @@ import {
   Distribution,
   HttpVersion,
   OriginAccessIdentity,
-  ViewerProtocolPolicy
+  ViewerProtocolPolicy,
 } from "monocdk/aws-cloudfront";
-import {Function, Runtime, Code, Tracing }from "monocdk/aws-lambda";
-import { ARecord, HostedZone, RecordTarget, RecordSet, RecordType } from "monocdk/aws-route53";
+import { Function, Runtime, Code, Tracing } from "monocdk/aws-lambda";
+import {
+  ARecord,
+  HostedZone,
+  RecordTarget,
+  RecordSet,
+  RecordType,
+} from "monocdk/aws-route53";
 import {
   Certificate,
-  CertificateValidation
+  CertificateValidation,
 } from "monocdk/aws-certificatemanager";
 import { S3Origin } from "monocdk/aws-cloudfront-origins";
-import { CloudFrontTarget, ApiGatewayv2Domain } from "monocdk/aws-route53-targets";
+import {
+  CloudFrontTarget,
+  ApiGatewayv2Domain,
+} from "monocdk/aws-route53-targets";
 import { RetentionDays } from "monocdk/lib/aws-logs";
-import { HttpApi, HttpMethod, PayloadFormatVersion, DomainName } from "monocdk/lib/aws-apigatewayv2";
+import {
+  HttpApi,
+  HttpMethod,
+  PayloadFormatVersion,
+  DomainName,
+} from "monocdk/lib/aws-apigatewayv2";
 import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations";
 
 export class InfrastructureStack extends Stack {
@@ -34,7 +48,7 @@ export class InfrastructureStack extends Stack {
         new PolicyStatement({
           effect: Effect.ALLOW,
           resources: ["*"],
-          actions: ["cloudformation:*"]
+          actions: ["cloudformation:*"],
         }),
         new PolicyStatement({
           effect: Effect.ALLOW,
@@ -42,38 +56,38 @@ export class InfrastructureStack extends Stack {
           actions: ["*"],
           conditions: {
             "ForAnyValue:StringEquals": {
-              "aws:CalledVia": ["cloudformation.amazonaws.com"]
-            }
-          }
+              "aws:CalledVia": ["cloudformation.amazonaws.com"],
+            },
+          },
         }),
         new PolicyStatement({
           effect: Effect.ALLOW,
           resources: ["arn:aws:s3:::cdktoolkit-stagingbucket-*"],
-          actions: ["s3:*"]
-        })
-      ]
+          actions: ["s3:*"],
+        }),
+      ],
     });
 
     new User(this, "CdkDeploymentUser", {
       userName: "CdkDeploymentUser",
-      managedPolicies: [policy]
+      managedPolicies: [policy],
     });
 
     const blockPublicAccess = new BlockPublicAccess({
       blockPublicAcls: true,
       blockPublicPolicy: true,
       ignorePublicAcls: true,
-      restrictPublicBuckets: true
+      restrictPublicBuckets: true,
     });
 
     const bucket = new Bucket(this, "FrontEndBucket", {
       versioned: true,
-      blockPublicAccess
+      blockPublicAccess,
     });
 
     const comment = "mira-hq-frontend";
     const identity = new OriginAccessIdentity(this, "OriginAccessIdentity", {
-      comment
+      comment,
     });
 
     bucket.addToResourcePolicy(
@@ -81,27 +95,27 @@ export class InfrastructureStack extends Stack {
         effect: Effect.ALLOW,
         principals: [identity.grantPrincipal],
         actions: ["s3:GetObject"],
-        resources: [bucket.bucketArn + "/*"]
+        resources: [bucket.bucketArn + "/*"],
       })
     );
 
     const domainName = "mira-hq.com";
 
     const hostedZone = new HostedZone(this, "HostedZone", {
-      zoneName: domainName
+      zoneName: domainName,
     });
 
     const certificate = new Certificate(this, "Certificate", {
       domainName,
       subjectAlternativeNames: ["*." + domainName],
-      validation: CertificateValidation.fromDns(hostedZone)
+      validation: CertificateValidation.fromDns(hostedZone),
     });
 
     const cachePolicy = new CachePolicy(this, "CachePolicy", {
       defaultTtl: Duration.minutes(5),
       cookieBehavior: CacheCookieBehavior.none(),
       headerBehavior: CacheHeaderBehavior.none(),
-      queryStringBehavior: CacheQueryStringBehavior.none()
+      queryStringBehavior: CacheQueryStringBehavior.none(),
     });
 
     const distribution = new Distribution(this, "Distribution", {
@@ -109,11 +123,11 @@ export class InfrastructureStack extends Stack {
       comment,
       defaultBehavior: {
         origin: new S3Origin(bucket, {
-          originAccessIdentity: identity
+          originAccessIdentity: identity,
         }),
         compress: true,
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cachePolicy
+        cachePolicy: cachePolicy,
       },
       defaultRootObject: "index.html",
       enableIpv6: true,
@@ -125,25 +139,25 @@ export class InfrastructureStack extends Stack {
           ttl: Duration.minutes(5),
           responsePagePath: "/index.html",
           responseHttpStatus: 200,
-          httpStatus: 404
+          httpStatus: 404,
         },
         {
           ttl: Duration.minutes(5),
           responsePagePath: "/index.html",
           responseHttpStatus: 200,
-          httpStatus: 403
-        }
-      ]
+          httpStatus: 403,
+        },
+      ],
     });
 
     new ARecord(this, "RecordSet", {
       zone: hostedZone,
-      target: RecordTarget.fromAlias(new CloudFrontTarget(distribution))
+      target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
     });
 
     const codeBucket = new Bucket(this, "CodeBucket", {
       versioned: true,
-      blockPublicAccess
+      blockPublicAccess,
     });
 
     const apiSubdomain = "api";
@@ -155,27 +169,22 @@ export class InfrastructureStack extends Stack {
       code: Code.fromBucket(codeBucket, "lambda.zip"),
       tracing: Tracing.ACTIVE,
       logRetention: RetentionDays.ONE_MONTH,
-      memorySize: 128
+      memorySize: 128,
     });
 
     const apiDomainName = new DomainName(this, "ApiDomainName", {
       certificate: certificate,
-      domainName: `${apiSubdomain}.${domainName}`
+      domainName: `${apiSubdomain}.${domainName}`,
     });
 
     new HttpApi(this, "HttpApi", {
-      corsPreflight:  {
+      corsPreflight: {
         allowCredentials: true,
         allowHeaders: ["*"],
-        allowMethods: [
-          HttpMethod.GET,
-          HttpMethod.POST
-        ],
-        allowOrigins: [
-          `https://${domainName}`
-        ],
+        allowMethods: [HttpMethod.GET, HttpMethod.POST],
+        allowOrigins: [`https://${domainName}`],
         exposeHeaders: [],
-        maxAge: Duration.minutes(5)
+        maxAge: Duration.minutes(5),
       },
       createDefaultStage: true,
       defaultIntegration: new LambdaProxyIntegration({
@@ -183,16 +192,16 @@ export class InfrastructureStack extends Stack {
         payloadFormatVersion: PayloadFormatVersion.VERSION_1_0,
       }),
       defaultDomainMapping: {
-        domainName: apiDomainName
-      }
+        domainName: apiDomainName,
+      },
     });
 
     new RecordSet(this, "LambdaRecordSet", {
       zone: hostedZone,
       recordName: apiSubdomain,
       recordType: RecordType.A,
-      target: RecordTarget.fromAlias(new ApiGatewayv2Domain(apiDomainName))
-    })
+      target: RecordTarget.fromAlias(new ApiGatewayv2Domain(apiDomainName)),
+    });
 
     const s3Policy = new ManagedPolicy(this, "S3DeploymentPolicy", {
       statements: [
@@ -202,36 +211,30 @@ export class InfrastructureStack extends Stack {
             bucket.bucketArn,
             bucket.bucketArn + "/*",
             codeBucket.bucketArn,
-            codeBucket.bucketArn + "/*"
+            codeBucket.bucketArn + "/*",
           ],
-          actions: ["s3:*"]
+          actions: ["s3:*"],
         }),
         new PolicyStatement({
           effect: Effect.ALLOW,
-          resources: [
-            lambdaFunction.functionArn
-          ],
+          resources: [lambdaFunction.functionArn],
           actions: [
             "lambda:UpdateFunctionCode",
             "lambda:CreateFunction",
-            "lambda:UpdateFunctionConfiguration"
-          ]
+            "lambda:UpdateFunctionConfiguration",
+          ],
         }),
         new PolicyStatement({
           effect: Effect.ALLOW,
-          resources: [
-            "*"
-          ],
-          actions: [
-            "iam:ListRoles"
-          ]
-        })
-      ]
+          resources: ["*"],
+          actions: ["iam:ListRoles"],
+        }),
+      ],
     });
 
     new User(this, "S3DeploymentUser", {
       userName: "S3DeploymentUser",
-      managedPolicies: [s3Policy]
+      managedPolicies: [s3Policy],
     });
   }
 }
