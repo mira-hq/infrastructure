@@ -182,7 +182,7 @@ export class InfrastructureStack extends Stack {
         allowCredentials: true,
         allowHeaders: ["*"],
         allowMethods: [HttpMethod.GET, HttpMethod.POST],
-        allowOrigins: [`https://${domainName}`],
+        allowOrigins: ["*"],
         exposeHeaders: [],
         maxAge: Duration.minutes(5),
       },
