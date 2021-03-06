@@ -170,7 +170,7 @@ export class InfrastructureStack extends Stack {
       tracing: Tracing.ACTIVE,
       logRetention: RetentionDays.ONE_MONTH,
       memorySize: 128,
-      timeout: Duration.seconds(10)
+      timeout: Duration.seconds(10),
     });
 
     const apiDomainName = new DomainName(this, "ApiDomainName", {
