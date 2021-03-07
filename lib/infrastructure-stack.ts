@@ -272,6 +272,14 @@ export class InfrastructureStack extends Stack {
       },
     });
 
+    lambdaFunction.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: [table.tableArn],
+        actions: ["dynamodb:*"],
+      })
+    );
+
     const devPolicy = new ManagedPolicy(this, "DevelopmentPolicy", {
       statements: [
         new PolicyStatement({
