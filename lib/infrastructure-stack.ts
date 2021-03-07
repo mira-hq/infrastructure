@@ -258,7 +258,7 @@ export class InfrastructureStack extends Stack {
       managedPolicies: [lambdaPolicy],
     });
 
-    new Table(this, "Table", {
+    const table = new Table(this, "Table", {
       billingMode: BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       tableName: "MiraHq",
@@ -270,6 +270,21 @@ export class InfrastructureStack extends Stack {
         name: "sk1",
         type: AttributeType.STRING,
       },
+    });
+
+    const devPolicy = new ManagedPolicy(this, "DevelopmentPolicy", {
+      statements: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: [table.tableArn],
+          actions: ["dynamodb:*"],
+        }),
+      ],
+    });
+
+    new User(this, "DevelopmentUser", {
+      userName: "MirahqDevelopment",
+      managedPolicies: [devPolicy],
     });
   }
 }
