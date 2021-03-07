@@ -36,6 +36,7 @@ import {
   DomainName,
 } from "monocdk/lib/aws-apigatewayv2";
 import { LambdaProxyIntegration } from "monocdk/lib/aws-apigatewayv2-integrations";
+import { AttributeType, BillingMode, Table } from "monocdk/lib/aws-dynamodb";
 
 export class InfrastructureStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -236,6 +237,20 @@ export class InfrastructureStack extends Stack {
     new User(this, "S3DeploymentUser", {
       userName: "S3DeploymentUser",
       managedPolicies: [s3Policy],
+    });
+
+    new Table(this, "Table", {
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      tableName: "MiraHq",
+      partitionKey: {
+        name: "pk1",
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk1",
+        type: AttributeType.STRING,
+      },
     });
   }
 }
