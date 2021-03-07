@@ -239,6 +239,25 @@ export class InfrastructureStack extends Stack {
       managedPolicies: [s3Policy],
     });
 
+    const lambdaPolicy = new ManagedPolicy(this, "LambdaDeploymentPolicy", {
+      statements: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: [lambdaFunction.functionArn],
+          actions: [
+            "lambda:UpdateFunctionCode",
+            "lambda:CreateFunction",
+            "lambda:UpdateFunctionConfiguration",
+          ],
+        }),
+      ],
+    });
+
+    new User(this, "LambdaDeploymentUser", {
+      userName: "LambdaDeploymentUser",
+      managedPolicies: [lambdaPolicy],
+    });
+
     new Table(this, "Table", {
       billingMode: BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
